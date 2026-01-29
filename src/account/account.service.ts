@@ -124,4 +124,39 @@ export class AccountService {
           data: { saldo: account.saldo - valor },
         });
     }
+
+    async transferirPix(remetenteId: number, emailDestino: string, valor: number) {
+      return this.prisma.$transaction(async (tx) => {
+
+        const remetente = await tx.conta.findUnique({
+          where: { id: remetenteId },
+        });
+
+        if (!remetente || remetente.saldo < valor) {
+          throw new Error('Saldo insuficiente ou conta não encontrada');
+        }
+
+        const usuarioDestino = await tx.user.findUnique({
+          where: { email: emailDestino },
+          include: { conta: true },
+        });
+
+        if (!usuarioDestino || !usuarioDestino.conta) {
+          throw new Error('Chave PIX (e-mail) não encontrada');
+        }
+
+  
+        const remetenteAtualizado = await tx.conta.update({
+          where: { id: remetenteId },
+          data: { saldo: { decrement: valor } },
+        });
+
+        await tx.conta.update({
+          where: { id: usuarioDestino.conta.id },
+          data: { saldo: { increment: valor } },
+        });
+
+        return remetenteAtualizado; // Retorna a conta de quem enviou com o novo saldo
+      });
+    }
 }

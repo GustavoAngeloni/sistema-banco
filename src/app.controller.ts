@@ -63,6 +63,21 @@ export class AppController {
     return this.userService.createUser(userData);
   }
 
+  @Post('pix')
+  async pix(@Body() body: { remetenteId: number, emailDestino: string, valor: number }) {
+    return this.accountService.transferirPix(body.remetenteId, body.emailDestino, body.valor);
+  }
+
+  @Post('accounts/login')
+  async login(@Body() body: any) {
+  return this.userService.login(body.email, body.password);
+  }
+
+  @Post('users/register')
+  async register(@Body() userData: any): Promise<UserModel> {
+    return this.userService.register(userData);
+  }
+
   @Post('accounts/create')
   async createAccount(@Body() accountData: any): Promise<AccountModel> {
     return this.accountService.createAccount(accountData);

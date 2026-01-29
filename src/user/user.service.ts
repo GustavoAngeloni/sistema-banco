@@ -14,6 +14,41 @@ export class UserService {
     });
   }
 
+
+  async register(data: Prisma.UserCreateInput) {
+  return this.prisma.user.create({
+    data: {
+      email: data.email,
+      name: data.name,
+      password: data.password, // Lembre-se de usar hash no futuro!
+      conta: {
+        create: {
+          saldo: 0, // A conta nasce com saldo zerado
+        }
+      }
+    },
+    include: { conta: true } // Retorna os dados da conta junto
+  });
+}
+
+
+  async login(email: string, senha: string) {
+  const user = await this.prisma.user.findUnique({
+    where: { email },
+    include: { conta: true }, // Traz a conta junto para pegar o saldo
+  });
+
+  if (!user || user.password !== senha) {
+    throw new Error('E-mail ou senha incorretos');
+  }
+
+  return {
+    nome: user.name,
+    saldo: user.conta!.saldo,
+    contaId: user.conta!.id
+  };
+}
+
   async users(params: {
     skip?: number;
     take?: number;
