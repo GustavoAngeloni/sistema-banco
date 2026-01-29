@@ -19,11 +19,12 @@ model User {
   email String  @unique
   name  String
   password String
+  conta Conta?
 }
 
 model Conta{
   id Int @id @default(autoincrement())
   saldo Float @default(0)
   usuarioId Int @unique
-  accountpassword String
+  usuario User @relation(fields: [usuarioId], references: [id])
 }
