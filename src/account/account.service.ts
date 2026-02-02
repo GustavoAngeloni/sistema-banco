@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Conta, Prisma, User } from 'generated/prisma/client';
 
+
 @Injectable()
 export class AccountService {
     constructor(private prisma: PrismaService) {}
@@ -130,6 +131,7 @@ export class AccountService {
 
         const remetente = await tx.conta.findUnique({
           where: { id: remetenteId },
+          include: { usuario: true }
         });
 
         if (!remetente || remetente.saldo < valor) {
@@ -156,7 +158,33 @@ export class AccountService {
           data: { saldo: { increment: valor } },
         });
 
-        return remetenteAtualizado; // Retorna a conta de quem enviou com o novo saldo
+        await tx.transaction.create({
+          data:{
+            amount: valor,
+            type: "PIX_ENVIADO",
+            description: `Para ${emailDestino}`,
+            accountId: remetenteId
+          }
+        });
+
+        await tx.transaction.create({
+          data: {
+            amount: valor,
+            type: 'PIX_RECEBIDO',
+            description: `De: ${remetente.usuario.email}`,
+            accountId: usuarioDestino.conta.id,
+          },
+        });
+
+        return remetenteAtualizado; 
       });
+    }
+
+
+    async getExtrato(accountId: number) {
+    return this.prisma.transaction.findMany({
+      where: { accountId },
+      orderBy: { createdAt: 'desc' }, 
+    });
     }
 }

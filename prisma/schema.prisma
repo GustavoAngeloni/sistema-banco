@@ -19,12 +19,28 @@ model User {
   email String  @unique
   name  String
   password String
+  recoveryCode String?
+  
   conta Conta?
+}
+
+model Transaction {
+  id              Int      @id @default(autoincrement())
+  amount          Float
+  type            String   // "PIX_ENVIADO" ou "PIX_RECEBIDO"
+  description     String
+  createdAt       DateTime @default(now())
+  
+
+  accountId       Int
+  account         Conta    @relation(fields: [accountId], references: [id])
 }
 
 model Conta{
   id Int @id @default(autoincrement())
   saldo Float @default(0)
   usuarioId Int @unique
+
   usuario User @relation(fields: [usuarioId], references: [id])
+  transactions Transaction[] 
 }

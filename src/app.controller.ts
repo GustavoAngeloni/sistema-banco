@@ -82,4 +82,24 @@ export class AppController {
   async createAccount(@Body() accountData: any): Promise<AccountModel> {
     return this.accountService.createAccount(accountData);
   }
+
+  @Post('forgot-password')
+  async forgot(@Body() body: { email: string }) {
+    return this.userService.esqueciSenha(body.email);
+  }
+
+  @Post('reset-password')
+  async reset(@Body() body: { email: string, code: string, newPass: string }) {
+    return this.userService.redefinirSenha(body.email, body.code, body.newPass);
+  }
+
+  @Get('extrato/:id') // Note que o caminho deve bater com o fetch: /accounts/extrato/ID
+  async buscarExtrato(@Param('id') id: string) {
+    return this.accountService.getExtrato(Number(id));
+  }
+
+
+
+
 }
+

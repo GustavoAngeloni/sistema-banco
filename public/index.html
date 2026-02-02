@@ -6,7 +6,19 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { margin: 0; display: flex; min-height: 100vh; background: #f0f2f5; }
-        
+
+        /* Botao de Extrato */
+        .transacao-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 14px;
+        }
+        .valor-negativo { color: #e53e3e; font-weight: bold; }
+        .valor-positivo { color: #38a169; font-weight: bold; }
+        .data-extrato { color: #718096; font-size: 11px; }
+
         /* Sidebar */
         .sidebar { width: 260px; background: #1a202c; color: white; padding: 20px; display: flex; flex-direction: column; }
         .sidebar h2 { color: #63b3ed; text-align: center; margin-bottom: 30px; }
@@ -80,6 +92,25 @@
                 <input type="email" id="login-email" placeholder="Seu E-mail">
                 <input type="password" id="login-password" placeholder="Sua Senha">
                 <button class="action-btn btn-blue" onclick="fazerLogin()">Entrar</button>
+                
+                <div id="area-esqueci" style="display: none; margin-top: 15px; text-align: center;">
+                    <button class="nav-btn" style="color: #3182ce; font-size: 14px; text-decoration: underline;" onclick="mostrarRecuperacao()">Esqueci a Senha</button>
+                </div>
+            </div>
+
+            <div id="recuperar-passo-1" class="form-group" style="display: none;">
+                <h3>Recuperar Senha</h3>
+                <p>Informe seu e-mail para receber o código.</p>
+                <input type="email" id="recup-email" placeholder="E-mail da conta">
+                <button class="action-btn btn-green" onclick="enviarCodigo()">Enviar Código</button>
+                <button class="action-btn" onclick="cancelarRecuperacao()" style="background:#718096">Voltar</button>
+            </div>
+
+            <div id="recuperar-passo-2" class="form-group" style="display: none;">
+                <h3>Definir Nova Senha</h3>
+                <input type="text" id="recup-codigo" placeholder="Código de 4 dígitos">
+                <input type="password" id="recup-nova-senha" placeholder="Nova Senha">
+                <button class="action-btn btn-blue" onclick="confirmarTroca()">Alterar Senha</button>
             </div>
 
             <div id="dados-usuario" style="display: none; background: #edf2f7; padding: 20px; border-radius: 8px;">
@@ -99,8 +130,16 @@
                     <button class="action-btn btn-blue" onclick="confirmarPix()">Confirmar Transferência</button>
                     <button class="action-btn" onclick="togglePix()" style="background:#fa0000">Cancelar</button>
                 </div>
+                <div id="extrato-container" style="margin-top: 30px;">
+                <h3>📜 Extrato Recente</h3>
+                <button class="nav-btn" style="color: #3182ce; padding: 0;" onclick="carregarExtrato()">Atualizar Extrato</button>
+                <div id="lista-transacoes" style="margin-top: 15px;">
+                    <p style="color: #a0aec0;">Nenhuma movimentação ainda.</p>
+                </div>
+                </div>
             </div>
-        </section>  
+            
+        </section>
 
         <div id="mensagem" class="status-msg"></div>
     </main>
@@ -149,11 +188,9 @@
         }
         
 
-        let logadoContaId = null; // Para saber quem está enviando o dinheiro
+        let logadoContaId = null;
 
-        // Lógica de Login e pix em sequência
-        
-        async function fazerLogin() {
+            async function fazerLogin() {
                 const email = document.getElementById('login-email').value;
                 const password = document.getElementById('login-password').value;
 
@@ -166,26 +203,74 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Esconde o formulário e mostra os dados
+                    logadoContaId = data.contaId;
+                    localStorage.setItem('logadoContaId', data.contaId);
+
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('dados-usuario').style.display = 'block';
-                    
-                    // Preenche os dados
+                    document.getElementById('area-esqueci').style.display = 'none';
+
                     document.getElementById('user-nome').innerText = data.nome;
                     document.getElementById('user-conta-id').innerText = data.contaId;
                     document.getElementById('user-saldo').innerText = data.saldo.toFixed(2);
-                    localStorage.setItem('logadoContaId', data.contaId);
-                    localStorage.setItem('userNome', data.nome);
                     
-                    // Atualiza a variável global
-                    logadoContaId = data.contaId;
+                    carregarExtrato();
 
-                    exibirPerfil(data.nome, data.contaId, data.saldo);
-                    
                     exibirMensagem(true, "Login realizado com sucesso!");
                 } else {
-                    exibirMensagem(false, data.message || "Erro ao fazer login");
+                    exibirMensagem(false, data.message || "Senha incorreta");
+                    // Mostra o botão "Esqueci a Senha" apenas se o erro for de senha/login
+                    document.getElementById('area-esqueci').style.display = 'block';
                 }
+            }
+
+            // --- FUNÇÕES DE RECUPERAÇÃO ---
+            function mostrarRecuperacao() {
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('recuperar-passo-1').style.display = 'block';
+                document.getElementById('recup-email').value = document.getElementById('login-email').value;
+            }
+
+            async function enviarCodigo() {
+                const email = document.getElementById('recup-email').value;
+                const res = await fetch('/forgot-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email })
+                });
+
+                if(res.ok) {
+                    document.getElementById('recuperar-passo-1').style.display = 'none';
+                    document.getElementById('recuperar-passo-2').style.display = 'block';
+                    exibirMensagem(true, "Código enviado para o console do servidor!");
+                } else {
+                    exibirMensagem(false, "E-mail não encontrado.");
+                }
+            }
+
+            async function confirmarTroca() {
+                const email = document.getElementById('recup-email').value;
+                const code = document.getElementById('recup-codigo').value;
+                const newPass = document.getElementById('recup-nova-senha').value;
+
+                const res = await fetch('/reset-password', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, code, newPass })
+                });
+
+                if(res.ok) {
+                    alert("Senha alterada! Use a nova senha para entrar.");
+                    cancelarRecuperacao();
+                } else {
+                    exibirMensagem(false, "Código inválido!");
+                }
+            }
+
+            function cancelarRecuperacao() {
+                document.getElementById('recuperar-passo-1').style.display = 'none';
+                document.getElementById('recuperar-passo-2').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
             }
             
             function togglePix() {
@@ -232,6 +317,7 @@
                     alert("PIX realizado!");
                     document.getElementById('user-saldo').innerText = data.saldo.toFixed(2);
                     togglePix();
+                    carregarExtrato();
                 } else {
                     alert("Erro do Servidor: " + data.message);
                 }
@@ -240,6 +326,39 @@
                 alert("Não foi possível conectar ao servidor.");
             }
         }
+
+            async function carregarExtrato() {
+                if (!logadoContaId) return;
+
+                const response = await fetch(`/extrato/${logadoContaId}`);
+                const transacoes = await response.json();
+
+                const container = document.getElementById('lista-transacoes');
+                container.innerHTML = ''; // Limpa a lista
+
+                if (transacoes.length === 0) {
+                    container.innerHTML = '<p>Sem movimentações.</p>';
+                    return;
+                }
+
+                transacoes.forEach(t => {
+                    const isEnviado = t.type === 'PIX_ENVIADO';
+                    const dataFormatada = new Date(t.createdAt).toLocaleString('pt-BR');
+                    
+                    container.innerHTML += `
+                        <div class="transacao-item">
+                            <div>
+                                <strong>${isEnviado ? '📤 PIX Enviado' : '📥 PIX Recebido'}</strong><br>
+                                <span class="data-extrato">${dataFormatada}</span><br>
+                                <small>${t.description}</small>
+                            </div>
+                            <div class="${isEnviado ? 'valor-negativo' : 'valor-positivo'}">
+                                ${isEnviado ? '-' : '+'} R$ ${t.amount.toFixed(2)}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
 
             function sair() {
                 document.getElementById('login-form').style.display = 'block';
