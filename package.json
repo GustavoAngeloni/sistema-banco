@@ -27,6 +27,7 @@
     "@nestjs/serve-static": "^5.0.4",
     "@prisma/adapter-better-sqlite3": "^7.3.0",
     "@prisma/client": "^7.3.0",
+    "ioredis": "^5.9.2",
     "nodemailer": "^7.0.13",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

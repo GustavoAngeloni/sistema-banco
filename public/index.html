@@ -7,6 +7,54 @@
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { margin: 0; display: flex; min-height: 100vh; background: #f0f2f5; }
 
+        /* Container do perfil no topo */
+        .header-perfil {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 12px;
+        }
+
+        /* A bolinha da foto */
+        .foto-container {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+
+        .foto-perfil {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #3182ce;
+            background: #e2e8f0;
+            cursor: pointer;
+            transition: filter 0.3s;
+        }
+
+        .foto-perfil:hover {
+            filter: brightness(0.8);
+        }
+
+        /* O texto "Alterar" que aparece ao passar o mouse */
+        .foto-container:hover::after {
+            content: "Alterar";
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 5px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
         /* Botao de Extrato */
         .transacao-item {
             display: flex;
@@ -114,28 +162,44 @@
             </div>
 
             <div id="dados-usuario" style="display: none; background: #edf2f7; padding: 20px; border-radius: 8px;">
-                <h3>Olá, <span id="user-nome"></span>!</h3>
-                <p>ID da Conta: <strong id="user-conta-id"></strong></p>
-                <div style="background: white; padding: 20px; border-radius: 8px; text-align: center;">
+    
+                <div class="header-perfil" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <div class="foto-container" onclick="document.getElementById('input-foto').click()" style="cursor: pointer; position: relative;">
+                        <img id="user-foto" src="https://ui-avatars.com/api/?name=User" class="foto-perfil" alt="Foto de Perfil" style="width: 60px; height: 60px; border-radius: 50%; border: 3px solid #3182ce; object-fit: cover;">
+                        <input type="file" id="input-foto" style="display:none" accept="image/*" onchange="enviarFotoRedis()">
+                    </div>
+                    <div>
+                        <h3 style="margin:0">Olá, <span id="user-nome"></span>!</h3>
+                        <small style="color: #718096">ID da Conta: <strong id="user-conta-id"></strong></small>
+                    </div>
+                </div>
+
+                <div style="background: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
                     <span style="font-size: 14px; color: #718096;">Saldo Atual</span>
                     <h1 style="color: #2f855a; margin: 10px 0;">R$ <span id="user-saldo">0.00</span></h1>
                 </div>
-                <button class="action-btn btn-red" onclick="sair()">Sair</button>
-                <button class="action-btn btn-green" id="btn-abrir-pix" onclick="togglePix()">PIX</button>
 
-                <div id="area-pix" style="display: none; margin-top: 20px; padding: 15px; border: 1px dashed #2f855a; border-radius: 8px;">
-                    <h4>Novo PIX</h4>
-                    <input type="email" id="pix-email" placeholder="E-mail do destinatário">
-                    <input type="number" id="pix-valor" placeholder="Valor R$">
-                    <button class="action-btn btn-blue" onclick="confirmarPix()">Confirmar Transferência</button>
-                    <button class="action-btn" onclick="togglePix()" style="background:#fa0000">Cancelar</button>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="action-btn btn-green" id="btn-abrir-pix" onclick="togglePix()" style="flex: 1;">PIX</button>
+                    <button class="action-btn btn-red" onclick="sair()" style="flex: 1;">Sair</button>
                 </div>
-                <div id="extrato-container" style="margin-top: 30px;">
-                <h3>📜 Extrato Recente</h3>
-                <button class="nav-btn" style="color: #3182ce; padding: 0;" onclick="carregarExtrato()">Atualizar Extrato</button>
-                <div id="lista-transacoes" style="margin-top: 15px;">
-                    <p style="color: #a0aec0;">Nenhuma movimentação ainda.</p>
+
+                <div id="area-pix" style="display: none; margin-bottom: 20px; padding: 15px; border: 1px dashed #2f855a; border-radius: 8px; background: #f0fff4;">
+                    <h4 style="margin-top: 0;">Novo PIX</h4>
+                    <input type="email" id="pix-email" placeholder="E-mail do destinatário" style="width: 100%; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <input type="number" id="pix-valor" placeholder="Valor R$" style="width: 100%; margin-bottom: 10px; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <button class="action-btn btn-blue" onclick="confirmarPix()" style="width: 100%; margin-bottom: 5px;">Confirmar Transferência</button>
+                    <button class="action-btn" onclick="togglePix()" style="background:#e53e3e; color: white; width: 100%;">Cancelar</button>
                 </div>
+
+                <div id="extrato-container" style="margin-top: 30px; border-top: 1px solid #cbd5e0; padding-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">📜 Últimas Movimentações</h3>
+                        <button class="nav-btn" style="color: #3182ce; background: none; border: none; cursor: pointer;" onclick="carregarExtrato()">Atualizar</button>
+                    </div>
+                    <div id="lista-transacoes" style="margin-top: 15px;">
+                        <p style="color: #a0aec0; text-align: center;">Nenhuma movimentação ainda.</p>
+                    </div>
                 </div>
             </div>
             
@@ -191,9 +255,10 @@
         let logadoContaId = null;
 
             async function fazerLogin() {
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
 
+            try {
                 const response = await fetch('/accounts/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -203,9 +268,12 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    // 1. Salvar os IDs no LocalStorage imediatamente
                     logadoContaId = data.contaId;
                     localStorage.setItem('logadoContaId', data.contaId);
+                    localStorage.setItem('userId', data.userId); // Crucial para o Redis!
 
+                    // 2. Atualizar a Interface Humana
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('dados-usuario').style.display = 'block';
                     document.getElementById('area-esqueci').style.display = 'none';
@@ -213,16 +281,25 @@
                     document.getElementById('user-nome').innerText = data.nome;
                     document.getElementById('user-conta-id').innerText = data.contaId;
                     document.getElementById('user-saldo').innerText = data.saldo.toFixed(2);
-                    
+
+                    // 3. Chamar funções de carregamento de dados
                     carregarExtrato();
+                    
+                    // 4. Buscar a foto no Redis usando a função que você já tem
+                    // Ela vai cuidar de colocar a foto ou o avatar padrão
+                    await carregarFotoPerfil(data.userId);
 
                     exibirMensagem(true, "Login realizado com sucesso!");
+
                 } else {
-                    exibirMensagem(false, data.message || "Senha incorreta");
-                    // Mostra o botão "Esqueci a Senha" apenas se o erro for de senha/login
+                    exibirMensagem(false, data.message || "E-mail ou senha incorretos");
                     document.getElementById('area-esqueci').style.display = 'block';
                 }
+            } catch (error) {
+                console.error("Erro na requisição de login:", error);
+                exibirMensagem(false, "Erro ao conectar com o servidor.");
             }
+        }
 
             // --- FUNÇÕES DE RECUPERAÇÃO ---
             function mostrarRecuperacao() {
@@ -247,7 +324,7 @@
                     exibirMensagem(false, "E-mail não encontrado.");
                 }
             }
-
+            
             async function confirmarTroca() {
                 const email = document.getElementById('recup-email').value;
                 const code = document.getElementById('recup-codigo').value;
@@ -276,6 +353,26 @@
             function togglePix() {
                 const area = document.getElementById('area-pix');
                 area.style.display = area.style.display === 'none' ? 'block' : 'none';
+            }
+
+            async function enviarFotoRedis() {
+                const fileInput = document.getElementById('input-foto');
+                const userId = localStorage.getItem('userId');
+
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+
+                const response = await fetch(`/upload-foto/${userId}`, {
+                    method: 'POST',
+                    body: formData // Lembre-se: NADA de headers aqui!
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Atualiza a imagem na tela NA HORA com o que o servidor devolveu
+                    document.getElementById('user-foto').src = data.url;
+                    console.log("Upload concluído!");
+                }
             }
 
            async function confirmarPix() {
@@ -326,6 +423,28 @@
                 alert("Não foi possível conectar ao servidor.");
             }
         }
+
+
+            async function carregarFotoPerfil(userId) {
+            if (!userId) return;
+
+            try {
+                const response = await fetch(`/foto/${userId}`);
+                const data = await response.json();
+
+                if (data.url) {
+                    // Se o Redis tem a foto, aplica no <img>
+                    document.getElementById('user-foto').src = data.url;
+                } else {
+                    // Se não tem, usa o avatar padrão com o nome salvo
+                    const nome = document.getElementById('user-nome').innerText;
+                    document.getElementById('user-foto').src = `https://ui-avatars.com/api/?name=${nome}`;
+                }
+            } catch (error) {
+                console.error("Erro ao carregar foto do Redis:", error);
+            }
+            }
+
 
             async function carregarExtrato() {
                 if (!logadoContaId) return;

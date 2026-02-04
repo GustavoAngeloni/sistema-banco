@@ -7,10 +7,14 @@ import {
   Put,
   Delete,
   Patch,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from 'src/user/user.service';
 import { AccountService } from 'src/account/account.service';
 import { User as UserModel, Conta as AccountModel } from 'generated/prisma/client';
+import { BadRequestException } from '@nestjs/common';
 
 @Controller()
 export class AppController {
@@ -98,8 +102,26 @@ export class AppController {
     return this.accountService.getExtrato(Number(id));
   }
 
+  // Area de Imagem
 
+  @Post('upload-foto/:id')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFoto(@Param('id') id: string, @UploadedFile() file: any) {
+    const userId = Number(id);
 
+    // Se o ID não for um número, pare aqui mesmo
+    if (isNaN(userId)) {
+      throw new BadRequestException("ID de usuário inválido!");
+    }
+
+    return this.accountService.salvarFoto(userId, file);
+  }
+
+  @Get('foto/:id')
+  async buscarFoto(@Param('id') id: string) {
+  const fotoUrl = await this.accountService.buscarFoto(Number(id));
+  return { url: fotoUrl }; // Retorna a string Base64 que está no Redis
+}
 
 }
 

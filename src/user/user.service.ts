@@ -124,6 +124,7 @@ async esqueciSenha(email: string) {
   }
 
   return {
+    userId: user.id,
     nome: user.name,
     saldo: user.conta!.saldo,
     contaId: user.conta!.id

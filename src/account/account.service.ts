@@ -1,13 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Conta, Prisma, User } from 'generated/prisma/client';
+import Redis from 'ioredis';
+import { InternalServerErrorException } from '@nestjs/common';
+
 
 
 @Injectable()
 export class AccountService {
     constructor(private prisma: PrismaService) {}
+    private redis = new Redis({
+      host: '127.0.0.1',
+      port: 6379
+    });
 
+    async salvarFoto(userId: number, file: any) {
+      try {
+        // 1. Converter para Base64
+        const base64Image = file.buffer.toString('base64');
+        const dataUrl = `data:${file.mimetype};base64,${base64Image}`;
+        
+        const chave = `user:foto:${userId}`;
 
+        // 2. Usar 'await' para garantir que gravou antes de responder
+        await this.redis.set(chave, dataUrl);
+        
+        console.log(`✅ Foto salva no Redis! Chave: ${chave}`);
+        
+        return { url: dataUrl };
+      } catch (error) {
+        console.error("❌ Erro ao gravar no Redis:", error);
+        throw new InternalServerErrorException("Falha no Redis");
+      }
+    }
+    async buscarFoto(userId: number){
+      return await this.redis.get(`user:foto:${userId}`);
+    }
 
     async account(
     accountWhereUniqueInput: Prisma.ContaWhereUniqueInput,
